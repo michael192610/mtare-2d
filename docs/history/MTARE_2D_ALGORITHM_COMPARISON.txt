@@ -1,0 +1,227 @@
+M-TARE AND THE ALIGNED 2D ADAPTATION
+Snapshot: 16 November 2026 — region-report repair v5
+Project: <project-root>
+
+Visualization update, 16 November 2026: finite communication range is drawn as a
+dashed circle around the selected robot on both panels, in live and saved views.
+It follows the selected robot; team view and full communication omit the circle.
+This is display-only; v5 planning, communication and completion are unchanged.
+
+Launch update, 16 November 2026: headless runs automatically open the saved-results
+window after finalization and worker shutdown. --no-open supports unattended
+runs. Console output omits results-folder/file locations; run_fast.sh receives
+its exact run directory through a private launcher file instead of parsing logs.
+That launch update changes display behavior only. The separate protocol repair
+below is the only v5 coordination change; exploration and VRP procedures remain
+those of lookahead v4.
+
+MAINTENANCE REQUIREMENT
+Update this file whenever the project changes. Separate implemented behavior,
+adaptations and validation evidence. Historical source/documents are backed up.
+
+PURPOSE
+Adapt retained M-TARE planning procedures to a planar environment. Only scene
+sampling and visualization style come from Multi-Robot-EM-Exploration. EM's
+methodology is not a requirement or dependency. This Python implementation does
+not execute the original ROS planner binaries and is not proven equivalent to
+the full system. Original source remains untouched:
+  mtare_planner revision 57b0a183c4578cb1412c0c35326232372b60bd25.
+
+DEFAULT CHANGES FROM THE PREVIOUS FRONTIER BASELINE
+coverage_model=mtare replaces simple. Ordinary/frontier evidence, original-style
+region decisions and acknowledgement/suppression protocol are now selected at
+runtime. Viewpoint spacing changes from 2 m to .6 m; reopening threshold changes
+from >1 to >10 useful viewpoints. Region width remains 6 m, local area remains
+5 x 5 regions, visited-neighborhood radius remains 3 m, and global VRP remains
+80 ms. Original strict frontier comparisons are restored over integer sample
+scores: >=1 queue admission; >1 initial selection gate and region evidence.
+
+1. HIERARCHY AND GLOBAL OPTIMIZATION — RETAINED
+Coarse exploration-region tasks feed a per-robot OR-Tools VRP. Local viewpoints
+use a separate namespace and planner. Eligible global tasks are uncapped.
+Objective: sum(route costs) +100*longest route cost +9,999,999*dropped task count.
+Search: parallel cheapest insertion, guided local search, initial routes, 80 ms.
+Proposal adaptation removes obsolete/duplicate tasks and inserts missing tasks;
+seed comparison is fewer dropped tasks, then lower longest-route cost. Each
+robot executes its own row; proposal receipt does not impose team consensus.
+Reference: tsp_solver.cpp SolveVRP; grid_world.cpp GetInitialRoutes,
+GetInitialRoute/AddNodeToVRPPlan; coordination/robot.cpp LessCost.
+
+2. LOCAL COVERAGE PROCEDURE — RESTORED AS DEFAULT
+Persistent ordinary coverage ledger and separate dynamic frontier pool. Reuse
+unvisited eligible prior viewpoints; credit mandatory endpoints/reused views in
+predicted masks; ordinary-first marginal randomized selection, then supplementary
+frontier selection; local TSP ordering; ten trials when ordinary work exists,
+one otherwise; choose shortest trial. Local completion excludes transit-only
+endpoints. Planned masks do not commit persistent coverage.
+Reference: local_coverage_planner.cpp EnqueueViewpointCandidates, SelectViewPoint,
+SelectViewPointFromFrontierQueue and SolveLocalCoverageProblem.
+
+Two intentional implementation differences remain: a bounded live greedy queue
+avoids the original queue-indexing hazard; a seeded random generator replaces
+std::random_device. Original boundary/robot/previous-lookahead anchors and dummy-node TSP
+constraints are now restored over the private 2D graph. Boundary positions are
+computed from forward/reverse coarse routes through the existing planar adapter. Local path costs
+use a planar graph rather than 3D viewpoint graph geometry.
+
+2A. PEER-COMPLETED TARGET SAMPLES — CORRECTED 2D ADAPTER
+The point-cloud-free adapter used to score privately unknown frontier samples
+inside regions already accepted as COVERED_BY_OTHERS. Marking candidate viewpoints
+visited did not prevent a viewpoint in a neighbouring active region from earning
+that gain. The corrected default (respect_peer_coverage=true) excludes ordinary
+and frontier target samples whose own region is COVERED_BY_OTHERS. It does not
+exclude an uncompleted neighbour merely because its known-side frontier source
+is in a completed region. Own COVERED regions retain original reopening logic.
+
+Only accepted local region states are used; there is no global truth/map query,
+occupancy sharing, fabricated free space or 100% stopping rule. A newer accepted
+EXPLORING report removes suppression. The existing protected-local-work and
+revision rules remain intact. This explicitly adapts M-TARE's coarse subspace
+completion intent to unknown grid samples; it is not a literal original
+point-cloud operation. Per-plan peer_coverage metadata and a planning-time event
+make the excluded samples auditable against received region-state history.
+
+2B. LOOKAHEAD CONTINUITY AND LOCAL PRIORITY — RESTORED
+Default use_lookahead=true; lookahead_distance=8 m. Local TSP anchors include
+forward boundary, robot, previous valid in-horizon lookahead and reverse boundary.
+The original zero-cost dummy-node construction connects boundary endpoints and
+forces robot/previous-lookahead adjacency. Ordinary/frontier selection and
+multi-trial comparison remain unchanged; navigation anchors supply predicted
+coverage as in the original procedure. Coverage-anchor and via-node types remain
+distinct even when a path passes the same coordinate more than once.
+
+Forward/backward lookahead scanning skips lower-priority regions when coverage
+work exists, and stops at distance, visibility, coverage or boundary conditions.
+The original momentum-disabled direction branch compares previous direction,
+remaining coverage on each side and boundary distances. Lower-ID connected peer
+local-working regions set priority; no exclusive ownership or consensus rule
+is added. A source-derived C++ test covers 1,200 direction cases.
+
+Private occupancy supplies line of sight. Reached local anchors replace physical
+ROS global-boundary navigation; boundary distances use local graph geometry.
+The too-short-path fallback uses a reachable local global-route exit rather than
+the original ROS global-path sampling. Undefined zero-direction normalization
+is guarded by holding position and retaining the previous finite direction.
+The abstract executor follows a known-free graph path to the chosen goal, not
+the whole local TSP polyline. Actual execution length and complete TSP length are
+logged separately. Waypoint extension, momentum and physical controller/dynamics
+remain excluded. Four-neighbour geometry is unchanged: diagonal graph restoration
+is still a separate pending geometry change. This change does not claim smooth
+curvature, zero overlap or whole-system equivalence.
+
+3. COVERAGE REPRESENTATION — EXPLICIT PLANAR ADAPTER
+Ordinary samples: observed free-cell centres at 2 m spacing, persistent observed
+and covered flags. They are not physical 3D surface points. Actual pose/history
+and visited candidate visibility credit coverage only for observed samples.
+Frontier samples: unknown-side boundary cells rebuilt from private occupancy.
+Abstract observation radius 7.5 m; ordinary coverage radius 5 m; no occlusion,
+LiDAR, sensor matching or uncertainty. Integer ordinary thresholds 1/2 and
+frontier threshold 1 are justified planar definitions, not equivalent 3D counts.
+Strict/non-strict decision operators follow the original procedure; actual
+geometry, sample density and task sets differ. The 3 m visited neighborhood is
+retained, including peer-covered visited labels and own-history reapplication.
+
+4. REGION STATES — ORIGINAL-STYLE DECISIONS RESTORED
+RegionKnowledge, not FrontierRegionKnowledge, drives the default. Selection
+activates unseen regions; candidate-only evidence may mark them covered to
+others without changing the local UNSEEN state. Coverage counts, visit evidence,
+almost-covered horizon departure, bounded reopening, global surrounded/connection
+rules and receiver-relative peer labels are retained. Own active local regions
+remain protected from peer state replacement. Per-region update IDs increment
+as counters, not global-cycle timestamps.
+Reference: grid_world.cpp SetCellStatus, UpdateLocalCellStatus,
+UpdateGlobalCellStatus; coordination manager UpdateCells.
+Connectivity is supplied by known-free grid/merged coarse roadmap evidence
+instead of a physical keypose graph; homogeneous mobility is assumed.
+
+5. NO-RETURN-HOME IDLE FINALIZATION — REQUIRED SCOPE ADAPTATION
+Original pending almost-covered regions finalize when leaving the local window.
+Without return-home/convoy motion, an idle robot can retain such a region while
+peers repeatedly allocate it back to that robot. A full-size regression reproduced
+this: 100% observed, no motion, one stale global task, safety-cap exit.
+The simulator now finalizes a pending ACTIVE/almost-covered local region only
+when the robot has no eligible global tasks AND local coverage is complete AND
+the region has candidates, no selected viewpoints, and below-threshold ordinary
+and frontier coverage evidence. Updates increment revision and reset sync; the
+change is logged as idle_regions_settled. Other original local state branches
+are unchanged. No truth or percentage completion shortcut is used.
+
+6. PRIVATE KNOWLEDGE / SYNCHRONIZATION — RESTORED
+Private fine occupancy, region states, roadmap, positions and proposal cache.
+Packets contain region summaries, coarse edges, team proposal, local working
+regions and timestamped positions, never detailed occupancy/cost matrices.
+Original-style revision acceptance, separate equal/newer-revision sync pass,
+known-by bits, state-specific echo counts, suppression after five synchronized
+publications, and global-task transmission exception are active by default.
+Direct range/freshness, one-cycle delivery and forwarded-position rules remain
+simulation network choices. There is no deliberate communication-seeking motion.
+
+6A. EQUAL-REVISION REPORT REPAIR — DOCUMENTED PROTOCOL EXTENSION
+The original strict-newer acceptance and local-exploration protection remain.
+Conflicting exploration/completion reports can nevertheless share a counter.
+The old sync pass ACKed these incompatible states and suppressed the completion
+report, leaving remote active tasks repeatedly allocated to an idle robot that
+already considered them covered. This reproduced in the cycle-625 user run.
+
+Default repair_region_reports=true: only the robot that locally authored a
+completion claim (COVERED or the original UNSEEN/covered-to-others claim) reissues
+that unchanged claim at counter+1 after an equal-version exploration conflict.
+Peer-only completion labels are not promoted. Local region status and coverage
+evidence are unchanged by reissue. Original protected local exploration still
+rejects remote completion until the original local rules permit acceptance.
+
+ACKs now require matching serialized state AND version. Mismatch clears ACK/echo
+suppression; accepted new versions start a fresh ACK round. No map, sample masks,
+idle timeout, global-truth query or new completion predicate is added. The original
+repo has no equivalent explicit counter-collision repair: this uses its existing
+revision/publication mechanisms but is an intentional protocol extension, not
+claimed as a literal upstream operation. --original-region-protocol disables it.
+See REGION_REPORT_REPAIR.md for tests, saved-state continuation and run audits.
+
+7. GLOBAL COST GEOMETRY AND TIMING — ADAPTED
+Coarse connections require private known-free paths; received edges do not fill
+private occupancy. Geometric roadmap shortest paths or centre-distance fallback
+follow the original CellToCellDistance branches. Integer truncation, task-only
++500 offsets and disconnected-peer knowledge masks are retained. Original
+keypose discovery, physical graph repair, heterogeneous mobility and network
+transport are outside scope. Robot solves run in parallel processes with a
+barrier before movement. Original ROS node scheduling is not reproduced.
+
+8. COMPLETION — RETAINED PREDICATE WITH SIMULATION TIME
+After fresh plans, no eligible global tasks AND local coverage complete, after
+cycle >300, for every robot. Original >300 seconds maps to logical cycles here.
+No original return-home trajectory. The 1200-cycle safety cap is stopped/incomplete;
+100% observed alone does not stop the hierarchy. Idle finalization is explained
+above. Completion does not imply every map is complete or team plans agree.
+
+9. VALIDATION AND LIMITS
+120 automated tests, including unchanged historical behavior under explicit
+legacy fixtures, new default procedures, a no-return-home idle regression and
+nine report-conflict regressions. Historical profiles explicitly disable the
+repair; current-default tests exercise the enabled behavior.
+Compiled, unmodified original local-decision block compared on 2,400 evidence
+cases; original LessCost compared on 200 evaluated proposal pairs. ROS/geometry
+accessors are stubbed for these checks; the full original planner was not run.
+The earlier alignment runs reached 100% observation; the current peer-coverage
+checks completed at 99.96% (full comms) and 99.62% (30 m). These measured percentages
+are preserved. Current lookahead runs and limits are in LOOKAHEAD_RESULTS.md. The cycle-616
+peer-coverage replay and its checks are in PEER_COVERAGE_FIX.md; MTARE_2D_ALIGNMENT_RESULTS.md is historical alignment evidence.
+These checks do not prove equivalent trajectories, exploration performance,
+sensor physics or algorithmic superiority. One environment seed is not a general
+benchmark. Performance comparisons require matched geometry/discovery/movement,
+communication, stopping rules and computational accounting across more scenes.
+
+EXCLUSIONS
+LiDAR/point-cloud processing, ROS, SLAM/GTSAM, EM methodology/uncertainty, physical
+navigation/dynamics, pursuit, rendezvous, convoy and return-home motion.
+
+HISTORICAL OPTIONS
+coverage_model=simple retains the former frontier-only baseline. Use explicit
+2 m viewpoint spacing to reproduce its old geometry. The old sample mode's
+relaxed gates are selectable with --relaxed-frontier-thresholds. Historical
+source/configuration/run outputs remain unchanged. Earlier step documents are
+historical; this document and README describe the current default.
+
+CLAIM
+A source-checked 2D adaptation of retained M-TARE planning procedures, with
+explicit planar evidence, scheduling/network substitutions and behavior exclusions.

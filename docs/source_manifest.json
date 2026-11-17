@@ -1,0 +1,31 @@
+{
+  "packaged_on": "2026-11-17",
+  "original_mtare_commit": "57b0a183c4578cb1412c0c35326232372b60bd25",
+  "em_environment_commit": "e17bf2444b48b89a5f776abccb6e71e3837d599b",
+  "ir_sim_commit": "dbfb4f980c8f1c94171bffae3f67c58ad84dbdf1",
+  "original_planner_module_hashes": {
+    "viewer.py": "b1670b94a49a77c424d9c85d65ec1789ba8666b2c5ecae743a6364fd08ebcd5a",
+    "dense_coverage.py": "1d72fe87b9f5dff0a751a83cf545aeab3d6da1c1c06ff42365e4a897d0bd40e2",
+    "simple_frontier.py": "690f7f2b9ba48fe7f52e882b44b2b5b733b5c0d7386a62e432974b4827c0ba77",
+    "planning.py": "323eb95d46e478cd1e7297043f7b6d9d39b0b030f97d2ce1e8ee03ffe757ddf5",
+    "world.py": "eb9f34905afe95b1df4c702db76bcdc953b23ae1299e42755222de8aaefe4183",
+    "lookahead.py": "4da2d1ca6839a6137f2657a200bef69de591794c949b80f626b2c98a952c42ab",
+    "__init__.py": "d6cd3e9b9aae13751d942b9d1bf63f622461bdedb2473f36205d4a7e1ea96502",
+    "recording.py": "02567e39308e87e3e5209faf8f3fe99e11938a968f3f22a357241bc0985ca775",
+    "simulation.py": "14bd77d71db27b1a9fadad3b048c684afc9762abd50aac9bebe490304949daac",
+    "region_state.py": "cf0567759e84e2da6c776c40da489ef1a8a825020aeb652ed920fc09454d11ae",
+    "roadmap.py": "8c355658483563e9d8b6688b258aa09d5276af7592986fb73f274e88ba4cbcfb",
+    "viewpoints.py": "29ae4cdf2456d81c0e860fffa90529ee19f5bd9580c5de922545a6f9cb54d34e",
+    "vrp.py": "e87ceec7e295947b1c65e1fa30e721a301a31ef109c55cb328f1ccbbd485a911",
+    "results_viewer.py": "8e63d247d8b5edaea37fb5862d1ed697362437dc0c2af5717c2dd0fb8655a155",
+    "coverage_planner.py": "0602ea205db1334cf5f1cea75ac9774ed668126bcdfef300f459b318c43fb00b",
+    "__main__.py": "8a5191a1d5a145700d957bf3ac8313e3265d1171db6b591a27e49204d348e54d",
+    "local_coverage.py": "9ac75d7cf39e7d8bf4c9e4af78b5da7c8bb78207fad3c7bc62b78055f351f4c0",
+    "config.py": "a43ef20b71c427288e9a32b70ba4f549f288b37a6d1d27758b4adc68a7409921",
+    "coverage_bookkeeping.py": "a4644050861479996e71d240473d0663edbba6527e1d68ec322dc5c19d3d9e7e",
+    "regions.py": "608e015d11ffbffa368d08202abd64028fae36f1a23736820a587776f86d9caa",
+    "completion.py": "e53444ebebb6525f6ecb9d4c11fe6d27d41937571b28f4c7682bc05403dc4a8d"
+  },
+  "example_run": "20261117_132332_888662_30m_COMMS_3_ROBOTS",
+  "note": "Portable packaging of the existing implementation; no planner algorithm change intended."
+}

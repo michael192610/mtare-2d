@@ -1,0 +1,129 @@
+M-TARE 2D: ROADMAP AND KNOWLEDGE-SHARING RESULTS
+11 November 2026
+
+Implemented items 9 and 10; retained the agreed planner-work completion rule.
+Tests: 41 passed. Both runs passed independent global/local objective, region
+state, message, private occupancy, roadmap provenance and movement checks.
+
+COMMON SETTINGS
+Three robots; seed 755; 100 x 100 m; 2 m occupancy; 6 m exploration regions;
+30 x 30 m local window; parallel global searches; 50 ms per global VRP search.
+Local coverage scoring/thresholds and movement rules were not changed.
+No pursuit, convoy, rendezvous, ROS, SLAM or realistic sensors.
+
+SEPARATE SIMULATION RESULTS
+
+Condition    Observed cells    Coverage    Cycles    Travel (m)    Strict switches
+Full comms   2385 / 2385       100.00%     707       4235.80       21
+30 m comms   2377 / 2385        99.66%     761       4219.80        2
+
+These are single runs. They demonstrate operation, not a statistical speedup.
+Wall times were about 23.3 s and 22.1 s headless, including initialization,
+logging and final rendering. GUI viewing/pauses add time.
+
+FULL COMMUNICATION
+Run: runs/20261111_165459_586039_FULL_COMMS_3_ROBOTS
+Stopping reason: all_reachable_free_cells_observed
+Observed: 2385 / 2385 (100.00%).
+Travel: 4235.80 m; cycles: 707.
+Actual global solver calls: 520.
+Peer seeds used: 202; strict changed/retained peer rows: 21.
+A peer seed is not automatically a route switch; a route switch is not proof
+of physically completing every task in that route.
+Private observed-free cell counts, robots 0/1/2: [2037, 1466, 1792].
+These maps stay private even in full comms. The left/team display shows their
+evaluation union; each robot view can therefore remain partly unknown.
+Out-of-comms restricted matrix pairs across calls: 0.
+Cost branches across node-pair evaluations: {'roadmap': 62934}.
+Suppressed region records across publication attempts: 358834.
+This is a count of individual region omissions, not dropped packets.
+Newer indirectly forwarded position updates: 0.
+
+PAIR MOVEMENT (sampled after both robots moved in the same cycle)
+Pair    Both moving cycles    Within 4 m    Same cell
+0-1                    706            9           2
+0-2                    706           70          15
+1-2                    706           58          10
+Shared travel is not necessarily redundant exploration. Local/global routes
+remain independent choices; no artificial separation penalty was added.
+
+EXAMPLE OF REAL PROPOSAL SELECTION
+Cycle 460: robot 0 selected robot 2's proposal.
+Previous selected tasks: [2701, 2717, 2734, 2729]
+Own candidate adapted to current inputs: [2707, 2701, 2717, 2734, 2729]
+Retained peer-proposed own row: [2684, 2701, 2717, 2734, 2729]
+Costs [dropped tasks, longest team-route cost]: own [0, 3264], peer [0, 2584].
+The comparison uses penalized whole-team route costs, not pure metres.
+Task keys = 2500 + region ID. This is a global route decision, not a report
+that the robot has already visited all listed regions.
+Full evidence: calls/robot0_cycle000460_call000116.json
+
+The retained existing 100% observation exit fired in this run. It does not
+mean all region states converged or every robot independently finished.
+
+30 m COMMUNICATION
+Run: runs/20261111_165651_547135_30m_COMMS_3_ROBOTS
+Stopping reason: no_remaining_exploration_work
+Observed: 2377 / 2385 (99.66%).
+Travel: 4219.80 m; cycles: 761.
+Actual global solver calls: 495.
+Peer seeds used: 91; strict changed/retained peer rows: 2.
+A peer seed is not automatically a route switch; a route switch is not proof
+of physically completing every task in that route.
+Private observed-free cell counts, robots 0/1/2: [1757, 1811, 1778].
+These maps stay private even in full comms. The left/team display shows their
+evaluation union; each robot view can therefore remain partly unknown.
+Out-of-comms restricted matrix pairs across calls: 20765.
+Cost branches across node-pair evaluations: {'roadmap': 48790, 'straight_line_fallback': 27}.
+Suppressed region records across publication attempts: 362619.
+This is a count of individual region omissions, not dropped packets.
+Newer indirectly forwarded position updates: 163.
+
+PAIR MOVEMENT (sampled after both robots moved in the same cycle)
+Pair    Both moving cycles    Within 4 m    Same cell
+0-1                    676           13           1
+0-2                    666           15           3
+1-2                    682           55          12
+Shared travel is not necessarily redundant exploration. Local/global routes
+remain independent choices; no artificial separation penalty was added.
+
+EXAMPLE OF REAL PROPOSAL SELECTION
+Cycle 92: robot 2 selected robot 1's proposal.
+Previous selected tasks: [2555, 2556, 2554, 2571, 2623]
+Own candidate adapted to current inputs: [2555, 2571, 2623]
+Retained peer-proposed own row: [2673, 2657, 2623, 2555]
+Costs [dropped tasks, longest team-route cost]: own [0, 2048], peer [0, 1644].
+The comparison uses penalized whole-team route costs, not pure metres.
+Task keys = 2500 + region ID. This is a global route decision, not a report
+that the robot has already visited all listed regions.
+Full evidence: calls/robot2_cycle000092_call000024.json
+
+All planners consistently had no active exploration/global/local work.
+The completion guard stopped the cycles at the actual 99.66%; eight
+reachable free cells remained unobserved. No map/state was forced to 100%.
+
+WHAT CHANGED COMPARED WITH THE EARLIER 50 ms VERSION
+
+The earlier run 20261111_162825_902782_FULL_COMMS_3_ROBOTS finished at 99.92% in
+429 cycles. Its 0-2 pair was within 4 m in 231/424 both-moving cycles and in
+the same cell in 124. The new full-comms run measured 70/706 and 15 respectively.
+This run showed less side-by-side movement for that pair, but required more
+cycles/travel. The simultaneous cost and knowledge changes and time-limited
+search variation prevent attributing this difference to one component.
+No speedup or general overlap reduction is established from a single run.
+
+WHY PRIVATE MAPS MATTER
+
+Previously robots automatically copied detailed occupancy. Now they exchange
+global region states and connectivity, matching the intended M-TARE abstraction.
+A robot may know a remote global route without possessing the detailed path.
+It must observe local free space while navigating there. This changes decisions
+and can add exploration/travel despite a more faithful global protocol.
+
+REMAINING LIMITS
+
+Local coverage evidence still uses abstract 2D frontier samples and adapted
+counts. Direct roadmap links use known-free 2D paths instead of keypose graphs.
+Cycles are synchronized; return-home and communication-seeking are excluded.
+Next research comparisons need repeated seeds/scenes and matched budgets.
+Final belief completion is deliberately separate from measured coverage.

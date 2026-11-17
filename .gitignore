@@ -1,0 +1,29 @@
+# Environments, generated runs and upstream checkouts
+.venv/
+.references/
+**/runs/
+backups/
+**/latest_run.txt
+**/latest_rerun.txt
+**/active_gui.json
+**/.mplconfig/
+**/__pycache__/
+*.py[cod]
+*.rrd
+*.log
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+.DS_Store
+.idea/
+.vscode/
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+.aws/
+.ssh/
+*.pem
+*.key

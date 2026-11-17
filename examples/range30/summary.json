@@ -1,0 +1,79 @@
+{
+  "status": "finished",
+  "reason": "no_remaining_exploration_work",
+  "elapsed_wall_seconds": 146.33256233902648,
+  "final": {
+    "cycle": 593,
+    "explored_ratio": 0.9970649895178197,
+    "explored_reachable_free_cells": 2378,
+    "total_reachable_free_cells": 2385,
+    "known_cells": 2493,
+    "total_grid_cells": 2500,
+    "team_distance": 3140.852973795939,
+    "per_robot_distance": [
+      1041.6340461786858,
+      1040.6012847465488,
+      1058.617642870704
+    ],
+    "per_robot_known_cells": [
+      1848,
+      1748,
+      1906
+    ],
+    "coverage_samples_per_robot": [
+      {
+        "observed": 1772,
+        "covered": 1772,
+        "uncovered": 0
+      },
+      {
+        "observed": 1666,
+        "covered": 1666,
+        "uncovered": 0
+      },
+      {
+        "observed": 1809,
+        "covered": 1809,
+        "uncovered": 0
+      }
+    ],
+    "vrp_calls": 447,
+    "local_planning_calls": 735,
+    "region_states_per_robot": [
+      {
+        "COVERED_BY_OTHERS": 121,
+        "COVERED": 152,
+        "UNSEEN": 16
+      },
+      {
+        "COVERED": 136,
+        "COVERED_BY_OTHERS": 138,
+        "UNSEEN": 15
+      },
+      {
+        "COVERED": 106,
+        "COVERED_BY_OTHERS": 156,
+        "UNSEEN": 27
+      }
+    ],
+    "solver_calls": 405,
+    "peer_seed_uses": 138,
+    "last_dropped_tasks_per_robot": [
+      0,
+      0,
+      0
+    ],
+    "robot_exploration_finished": [
+      true,
+      true,
+      true
+    ],
+    "direct_peer_route_switches": 15,
+    "overlapping_own_task_claims": 0,
+    "messages_sent": 1464,
+    "messages_received": 2122,
+    "pending_messages": 0
+  },
+  "objective_verification_failures": 0,
+  "metric_note": "Light blue means observed free cells, not necessarily physically visited. Coverage denominator is truth-reachable free cells; used by evaluation and the optional simulation-level coverage stop gate, never planner inputs. Ordinary covered samples include executed-pose and visited-viewpoint visibility. Wall time includes GUI pauses/rendering."
+}

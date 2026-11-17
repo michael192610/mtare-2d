@@ -1,0 +1,90 @@
+LOCAL COVERAGE BOOKKEEPING: IMPLEMENTATION AND VALIDATION
+12 November 2026
+
+WHAT IS IMPLEMENTED
+Persistent observed/covered ordinary samples; dynamic separate frontier samples;
+per-viewpoint ordinary/frontier lists; separate predicted masks; reuse and
+navigation preselection; ordinary-first/frontier-second queue selection; marginal
+gain updates; local TSP trial choice; separate region-state evidence counts.
+Actual covered flags only follow executed/current/historical positions.
+Predicted selections and messages do not commit or share detailed coverage.
+
+EXPLICIT 2D TRANSLATION
+Free-cell centres are 2 m-spaced ordinary samples. Unknown-side patches near
+observed frontiers form the frontier pool without reading hidden occupancy.
+Discovery/frontier radius: 7.5 m; ordinary coverage radius: 5 m by default.
+The 2/3 ratio is an abstract modeling assumption, not an original M-TARE value.
+Small/big ordinary thresholds: 1/2 samples. Frontier minimum/score threshold: 1.
+Top-k randomized sampling: 3 (matches original indoor setting); ten ordinary
+optimization trials, or one frontier/reuse-only trial. Viewpoint spacing and
+region-level count thresholds remain adapted to the sparse 2D grid.
+
+VALIDATION
+52 tests passed, including ten new coverage-focused checks. These cover actual
+vs predicted coverage, persistent/history flags, hidden-truth independence,
+separate scores, reuse/navigation, marginal gains, frontier gates, region-state
+feedback, model/radius configuration and planner-work completion below 100%.
+Both full-scene simulations passed independent replay audits of committed
+coverage from executed positions, frontier pools, every viewpoint score, queue
+classification, marginal/top-k selections, masks, trial choice and final counts.
+Previous global costs, private-map messages, state transitions, local TSP and
+movement checks also passed. A short post-instrumentation run additionally
+verified recorded region_coverage_evidence against the actual score lists.
+
+FULL-SCENE RESULTS (three robots, seed 755, 50 ms global searches)
+Condition    Observed    Cycles    Team travel (m)    Strict peer switches
+Full comms   100.00%      561       3360.48            7
+30 m comms   100.00%      851       5100.48            8
+
+Both runs used the retained 100% observation exit. This is not evidence that
+every robot independently finished local coverage or all private ordinary
+samples were covered. The stable no-work stopping rule also remains; a new
+integration test verifies that it still finishes honestly below 100%.
+
+FULL COMMUNICATION
+Run: runs/20261112_144151_453656_FULL_COMMS_3_ROBOTS
+Reason: all_reachable_free_cells_observed
+Observed: 100.00%; cycles: 561; travel: 3360.48 m.
+Headless wall time: 23.21 s (includes logging/initialization/final render).
+Actual global solver calls: 411; peer seeds used: 140; strict route switches: 7.
+Selection activity across calls: {'calls': 422, 'with_ordinary_queue': 377, 'with_frontier_gate': 14, 'ordinary_selected': 901, 'frontier_selected': 7, 'reused': 1522}
+Selection/reuse counts can include the same viewpoint in multiple cycles.
+Private ordinary sample counts, robot order 0/1/2:
+[{'observed': 1516, 'covered': 1327, 'uncovered': 189}, {'observed': 1512, 'covered': 1251, 'uncovered': 261}, {'observed': 1426, 'covered': 1351, 'uncovered': 75}]
+Covered counts use the abstract ordinary coverage rule; observed counts use
+discovery. They are deliberately separate and do not sum across robots uniquely.
+Robot 0-2 close travel: {'both_moving': 560, 'within_4m': 9, 'same_cell': 1}
+Closeness is sampled only when both moved that cycle; it is not a direct
+measurement of wasted exploration or a guarantee of separation.
+Detailed checks: validation.json. Full inputs: local_calls/ and calls/.
+
+30 m COMMUNICATION
+Run: runs/20261112_144305_620690_30m_COMMS_3_ROBOTS
+Reason: all_reachable_free_cells_observed
+Observed: 100.00%; cycles: 851; travel: 5100.48 m.
+Headless wall time: 33.83 s (includes logging/initialization/final render).
+Actual global solver calls: 630; peer seeds used: 117; strict route switches: 8.
+Selection activity across calls: {'calls': 642, 'with_ordinary_queue': 557, 'with_frontier_gate': 32, 'ordinary_selected': 1270, 'frontier_selected': 4, 'reused': 2491}
+Selection/reuse counts can include the same viewpoint in multiple cycles.
+Private ordinary sample counts, robot order 0/1/2:
+[{'observed': 2117, 'covered': 1946, 'uncovered': 171}, {'observed': 1423, 'covered': 1266, 'uncovered': 157}, {'observed': 2195, 'covered': 1998, 'uncovered': 197}]
+Covered counts use the abstract ordinary coverage rule; observed counts use
+discovery. They are deliberately separate and do not sum across robots uniquely.
+Robot 0-2 close travel: {'both_moving': 850, 'within_4m': 15, 'same_cell': 1}
+Closeness is sampled only when both moved that cycle; it is not a direct
+measurement of wasted exploration or a guarantee of separation.
+Detailed checks: validation.json. Full inputs: local_calls/ and calls/.
+
+INTERPRETATION
+The code now represents the original local coverage decision procedure more
+closely, with explicit 2D evidence. The full-comms example used fewer cycles
+and less travel than the preceding saved run, but this is a single-seed,
+wall-time-limited search comparison. No general performance improvement or
+exact equivalence to original M-TARE is established.
+Coverage radius, sample spacing, thresholds, coarse connectivity, synchronized
+scheduling, target cap and retained evaluator exit remain documented differences.
+No separation penalty or forced proposal adoption was introduced.
+
+Historical configuration note: the runs above used the then-default 32-target
+cap. The subsequent uncapped baseline uses max_targets = 0. These saved runs
+were not modified or rerun, and are not uncapped performance measurements.

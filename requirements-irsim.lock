@@ -1,0 +1,9 @@
+# Core numerical/routing versions plus optional simulator dependencies.
+-r requirements.lock
+ImageIO==2.38.2
+loguru==0.8.0
+PyYAML==6.0.3
+scipy==1.18.1
+shapely==2.2.0
+# Pinned official source, including the tested external-state API.
+ir-sim @ git+https://github.com/hanruihua/ir-sim.git@dbfb4f980c8f1c94171bffae3f67c58ad84dbdf1

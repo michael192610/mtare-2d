@@ -1,0 +1,61 @@
+COMPLETION ALIGNMENT — 12 November 2026
+
+Only completion logic, its recording/auditing, tests and documentation changed.
+
+Current default rule, checked after fresh global/local plans:
+  For each robot: eligible global list empty AND local coverage complete
+                  AND logical cycle >300.
+  Stop simulation when every robot passes.
+
+Original source:
+  mtare_planner/src/tare_planner/include/grid_world/grid_world.h:674
+    NoExploringCells() tests global_exploring_cell_indices_.empty().
+  mtare_planner/src/tare_planner/src/sensor_coverage_planner/
+    sensor_coverage_planner_ground.cpp:1788
+    NoExploringCells() && IsLocalCoverageComplete() && elapsed ROS time >300 s.
+
+Explicit 2D adaptations:
+  The simulator has cycles, not physical seconds. The startup guard is >300
+  logical cycles, not a 300-second wall wait or a mission time deadline.
+  All robots' flags must be true to stop the simulator. Original robot nodes
+  report individually and may clear the flag if new work appears.
+  Return-home remains excluded. No pursuit/convoy/rendezvous was added.
+
+Removed from default completion:
+  Automatic 100% truth-observation exit.
+  Additional stable-idle confirmation and map-version stability requirement.
+  Additional requirements that every ACTIVE state, path or diagnostic drop count
+  disappear. Eligible global work and local completion are the source predicates.
+
+Retained:
+  1200-cycle safety cap (recorded stopped, not successfully finished).
+  Actual observed percentage reporting, including below-100% outcomes.
+  Original settings for VRP, coverage, communications, motion and scheduling.
+  Historical prototype modes keep their historical percentage exit.
+
+VALIDATION
+  60 unit/regression tests passed. Included strict startup boundary, unfinished
+  teammate, global work despite an empty own route, local-complete navigation,
+  flag reopening, partial coverage, 100% with work remaining, cycle-limit status,
+  result saving and robot-view browsing.
+
+  Full default scene, 3 robots, full comms, 80 ms, uncapped global tasks:
+    Run: runs/20261112_154341_101030_FULL_COMMS_3_ROBOTS
+    Reason: no_remaining_exploration_work
+    Final cycle: 653 (completion decision at tick 652)
+    Actual observed reachable free cells: 2385 / 2385 (100%)
+    Team distance: 3820.48 m
+    Wall time: 33.04 s (headless validation, not a general runtime guarantee)
+    Robot finish flags first became true at ticks 628, 632 and 652.
+    First 100% observation appeared at recorded cycle 577. The run correctly
+    continued until planner completion, rather than stopping from truth coverage.
+
+  Independent audit passed: all 492 global planning records, 540 local coverage
+  records, 680865 cost entries, 1956 compact publications, 1910 moves, private map
+  replay, state transitions and final planner-completion certificate.
+
+This change removes extra waiting after planner completion, but cannot guarantee
+shorter wall time or fewer cycles. Removing the 100% evaluator exit can make a
+run continue longer while the robots still believe useful work remains. It is
+closer to the original completion decision rather than a fixed duration limit.
+One run validates behavior; it is not a controlled performance comparison.

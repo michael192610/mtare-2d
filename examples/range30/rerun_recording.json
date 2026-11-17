@@ -1,0 +1,10 @@
+{
+  "sdk_version": "0.43.2",
+  "file": "simulation.rrd",
+  "timeline": "cycle",
+  "frame_count": 594,
+  "first_cycle": 0,
+  "last_cycle": 593,
+  "granularity": "initial state and every logical cycle; not individual grid substeps",
+  "contents": "IR-SIM frames, all private maps/cached poses/routes, ranges, metrics and planner state"
+}
